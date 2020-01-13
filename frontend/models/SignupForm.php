@@ -10,8 +10,9 @@ use common\models\User;
  */
 class SignupForm extends Model
 {
-    public $username;
     public $email;
+    public $name;
+    public $surname;
     public $password;
 
 
@@ -21,16 +22,18 @@ class SignupForm extends Model
     public function rules()
     {
         return [
-            ['username', 'trim'],
-            ['username', 'required'],
-            ['username', 'unique', 'targetClass' => '\common\models\User', 'message' => 'This username has already been taken.'],
-            ['username', 'string', 'min' => 2, 'max' => 255],
+            ['name', 'trim'],
+            ['name', 'required'],
+            ['name', 'string', 'max' => 255],
+
+            ['surname', 'trim'],
+            ['surname', 'string', 'max' => 255],
 
             ['email', 'trim'],
             ['email', 'required'],
             ['email', 'email'],
             ['email', 'string', 'max' => 255],
-            ['email', 'unique', 'targetClass' => '\common\models\User', 'message' => 'This email address has already been taken.'],
+            ['email', 'unique', 'targetClass' => User::class, 'message' => 'This email address has already been taken.'],
 
             ['password', 'required'],
             ['password', 'string', 'min' => 6],
@@ -41,6 +44,7 @@ class SignupForm extends Model
      * Signs user up.
      *
      * @return bool whether the creating new account was successful and email was sent
+     * @throws \yii\base\Exception
      */
     public function signup()
     {
@@ -49,8 +53,9 @@ class SignupForm extends Model
         }
         
         $user = new User();
-        $user->username = $this->username;
         $user->email = $this->email;
+        $user->name = $this->name;
+        $user->surname = $this->surname;
         $user->setPassword($this->password);
         $user->generateAuthKey();
         $user->generateEmailVerificationToken();
@@ -63,7 +68,7 @@ class SignupForm extends Model
      * @param User $user user model to with email should be send
      * @return bool whether the email was sent
      */
-    protected function sendEmail($user)
+    protected function sendEmail($user): bool
     {
         return Yii::$app
             ->mailer

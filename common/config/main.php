@@ -1,4 +1,7 @@
 <?php
+
+use yii\rbac\DbManager;
+
 return [
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
@@ -15,6 +18,9 @@ return [
             'showScriptName' => false,
             'rules' => [
             ],
+        ],
+        'authManager' => [
+            'class' => DbManager::class,
         ],
     ],
 ];

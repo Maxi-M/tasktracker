@@ -1,6 +1,7 @@
 <?php
 namespace common\models;
 
+use common\behaviors\TimestampTransformBehavior;
 use Yii;
 use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
@@ -11,7 +12,6 @@ use yii\web\IdentityInterface;
  * User model
  *
  * @property integer $id
- * @property string $username
  * @property string $password_hash
  * @property string $password_reset_token
  * @property string $verification_token
@@ -21,6 +21,11 @@ use yii\web\IdentityInterface;
  * @property integer $created_at
  * @property integer $updated_at
  * @property string $password write-only password
+ * @property string $name [varchar(100)]
+ * @property string $surname [varchar(100)]
+ * @property string $phone [varchar(50)]
+ * @property string $authKey
+ * @property int $photo_id [int(11)]
  */
 class User extends ActiveRecord implements IdentityInterface
 {
@@ -34,7 +39,7 @@ class User extends ActiveRecord implements IdentityInterface
      */
     public static function tableName()
     {
-        return '{{%user}}';
+        return '{{%users}}';
     }
 
     /**
@@ -43,7 +48,17 @@ class User extends ActiveRecord implements IdentityInterface
     public function behaviors()
     {
         return [
-            TimestampBehavior::className(),
+            'timestamp_behavior' => [
+                'class' => TimestampBehavior::className(),
+                'attributes' => [
+                    ActiveRecord::EVENT_BEFORE_INSERT => ['created_at', 'updated_at'],
+                    ActiveRecord::EVENT_BEFORE_UPDATE => ['updated_at'],
+                ],
+            ],
+            'TimestampTransform' => [
+                'class' => TimestampTransformBehavior::className(),
+                'attributes' => ['created_at', 'updated_at'],
+            ],
         ];
     }
 
@@ -68,6 +83,7 @@ class User extends ActiveRecord implements IdentityInterface
 
     /**
      * {@inheritdoc}
+     * @throws NotSupportedException
      */
     public static function findIdentityByAccessToken($token, $type = null)
     {
@@ -75,14 +91,14 @@ class User extends ActiveRecord implements IdentityInterface
     }
 
     /**
-     * Finds user by username
+     * Finds user by e-mail
      *
-     * @param string $username
+     * @param string $email
      * @return static|null
      */
-    public static function findByUsername($username)
+    public static function findByEmail($email)
     {
-        return static::findOne(['username' => $username, 'status' => self::STATUS_ACTIVE]);
+        return static::findOne(['email' => $email, 'status' => self::STATUS_ACTIVE]);
     }
 
     /**
@@ -122,7 +138,7 @@ class User extends ActiveRecord implements IdentityInterface
      * @param string $token password reset token
      * @return bool
      */
-    public static function isPasswordResetTokenValid($token)
+    public static function isPasswordResetTokenValid($token): bool
     {
         if (empty($token)) {
             return false;
@@ -163,7 +179,7 @@ class User extends ActiveRecord implements IdentityInterface
      * @param string $password password to validate
      * @return bool if password provided is valid for current user
      */
-    public function validatePassword($password)
+    public function validatePassword($password): bool
     {
         return Yii::$app->security->validatePassword($password, $this->password_hash);
     }
@@ -172,6 +188,7 @@ class User extends ActiveRecord implements IdentityInterface
      * Generates password hash from password and sets it to the model
      *
      * @param string $password
+     * @throws \yii\base\Exception
      */
     public function setPassword($password)
     {
@@ -180,6 +197,7 @@ class User extends ActiveRecord implements IdentityInterface
 
     /**
      * Generates "remember me" authentication key
+     * @throws \yii\base\Exception
      */
     public function generateAuthKey()
     {
@@ -188,6 +206,7 @@ class User extends ActiveRecord implements IdentityInterface
 
     /**
      * Generates new password reset token
+     * @throws \yii\base\Exception
      */
     public function generatePasswordResetToken()
     {
@@ -196,6 +215,7 @@ class User extends ActiveRecord implements IdentityInterface
 
     /**
      * Generates new token for email verification
+     * @throws \yii\base\Exception
      */
     public function generateEmailVerificationToken()
     {
@@ -208,5 +228,17 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken()
     {
         $this->password_reset_token = null;
+    }
+
+        /**
+     * Возвращает имя пользователя в виде "Имя Фамилия"
+     * @return string
+     */
+    public function getUsername(): string
+    {
+        if (!empty($this->surname)) {
+            return $this->name . ' ' . $this->surname;
+        }
+        return $this->name;
     }
 }
