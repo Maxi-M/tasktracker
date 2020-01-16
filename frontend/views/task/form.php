@@ -1,0 +1,39 @@
+<?php
+
+use yii\helpers\Html;
+use yii\helpers\Url;
+use yii\widgets\ActiveForm;
+
+/* @var $this yii\web\View */
+/* @var $model common\Models\Task */
+/* @var $form ActiveForm */
+?>
+<div class="task-form">
+
+    <?php $form = ActiveForm::begin(); ?>
+    <?= $form->field($model, 'id')->hiddenInput()->label(false, ['style' => 'display:none']) ?>
+    <?= $form->field($model, 'name') ?>
+
+    <?= $form->field($model, 'due_at')->widget("kartik\date\DatePicker", [
+        'name' => 'due_at',
+        'options' => [
+            'placeholder' => 'Выполнить до...',
+            'value' => empty($model->due_at) ? '' : Yii::$app->formatter->asDate($model->due_at, 'php:d.m.Y'),
+        ],
+        'convertFormat' => true,
+        'pluginOptions' => [
+            'format' => 'php:d.m.Y',
+            'todayHighlight' => true,
+            'autoClose' => true
+        ]
+    ]) ?>
+    <?= $form->field($model, 'responsible_id') ?>
+    <?= $form->field($model, 'description')->textarea() ?>
+
+
+    <div class="form-group">
+        <?= Html::submitButton('Submit', ['class' => 'btn btn-primary']) ?>
+    </div>
+    <?php ActiveForm::end(); ?>
+
+</div><!-- activity-form -->
