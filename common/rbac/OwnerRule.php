@@ -21,7 +21,7 @@ class OwnerRule extends Rule
      * Название правила
      * @var string
      */
-    public $name = 'isActivityOwner';
+    public $name = 'isOwner';
 
     /**
      * Executes the rule.
