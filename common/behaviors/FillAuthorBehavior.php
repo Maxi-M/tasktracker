@@ -31,6 +31,7 @@ class FillAuthorBehavior extends Behavior
      */
     public function fill(): void
     {
-        $this->owner->$this->target = \Yii::$app->user->id;
+        $target = $this->target;
+        $this->owner->$target = \Yii::$app->user->id;
     }
 }

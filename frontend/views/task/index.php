@@ -17,7 +17,7 @@ use yii\web\View;
 echo GridView::widget([
     'dataProvider' => $provider,
     'columns' => [
-        ['class' => SerialColumn::class],
+        //['class' => SerialColumn::class],
         [
             'attribute' => 'id',
         ],
@@ -26,7 +26,7 @@ echo GridView::widget([
         ],
                 [
             'label' => 'Ответственный за исполнение',
-            'attribute' => 'user.username',
+            'attribute' => 'author.username',
         ],
         [
             'class' => ActionColumn::class,
