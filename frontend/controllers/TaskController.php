@@ -5,20 +5,18 @@ namespace frontend\controllers;
 
 
 use common\models\Task;
+use common\models\User;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Url;
 use yii\web\Controller;
+use yii\web\ForbiddenHttpException;
+use yii\web\HttpException;
 
 class TaskController extends Controller
 {
-    private const ERROR_TITLE = 'Ошибка работы с задачами';
-    private const ERROR_PARAMETER_MISSING = 'Обязательный параметр задан некорректно, или отсутствует';
-    private const ERROR_ACCESS_DENIED = 'Доступ запрещён';
-    private const ERROR_NO_SUCH_TASK = 'Такой задачи не существует';
-    private const ERROR_OPERATION_FAILED = 'Операция не удалась.';
-
     public function behaviors()
     {
         return [
@@ -34,7 +32,7 @@ class TaskController extends Controller
         ];
     }
 
-    public function actionIndex()
+    public function actionIndex(): string
     {
         $activitiesProvider = new ActiveDataProvider([
             'query' => Task::find()->where(['author_id' => Yii::$app->user->id])
@@ -55,14 +53,12 @@ class TaskController extends Controller
     /**
      * Выводит форму создания нового задания и отвечает за обработку результата.
      * @return string
+     * @throws ForbiddenHttpException
      */
-    public function actionCreate()
+    public function actionCreate(): string
     {
         if (!Yii::$app->user->can('create_task')) {
-            return $this->render('task-error', [
-                'name' => self::ERROR_TITLE,
-                'message' => self::ERROR_ACCESS_DENIED
-            ]);
+            throw new ForbiddenHttpException('Доступ запрещён');
         }
         $model = new Task();
 
@@ -70,44 +66,75 @@ class TaskController extends Controller
             $model->save();
             return Yii::$app->getResponse()->redirect(['/task/view', 'id' => $model->id]);
         }
-
         return $this->render('form', ['model' => $model]);
     }
 
-    public function actionView()
-    {
-        $result = $this->getAllowedModel('view_task');
-        if (gettype($result) === Task::className()) {
-            return $this->render('view', ['model' => $result ]);
-        }
-        return $result;
-    }
-
-    public function actionUpdate()
+    /**
+     * Отображает задачу с id, полученным из запроса
+     * @param int $id
+     * @return string
+     * @throws ForbiddenHttpException
+     * @throws HttpException
+     */
+    public function actionView(int $id): string
     {
 
-    }
-
-    private function getAllowedModel(string $permission)
-    {
-        if ($id = (int)Yii::$app->request->get('id')) {
-            if ($model = Task::findOne($id)) {
-                if (Yii::$app->user->can($permission, ['task' => $model])) {
-                    return $model;
-                }
-                return $this->render('task-error', [
-                    'name' => self::ERROR_TITLE,
-                    'message' => self::ERROR_ACCESS_DENIED
-                ]);
+        if ($model = Task::findOne($id)) {
+            if (Yii::$app->user->can('view_task', ['task' => $model])) {
+                return $this->render('view', ['model' => $model]);
             }
-            return $this->render('task-error', [
-                'name' => self::ERROR_TITLE,
-                'message' => self::ERROR_NO_SUCH_TASK
-            ]);
+            throw new ForbiddenHttpException('Доступ запрещён');
         }
-        return $this->render('task-error', [
-            'name' => self::ERROR_TITLE,
-            'message' => self::ERROR_PARAMETER_MISSING
-        ]);
+        throw new HttpException('404', 'Не удалось найти задачу с указанным id');
+    }
+
+    /**
+     * Отображает форму редактирования задачи с id, полученным из запроса
+     * @param int $id
+     * @return string
+     * @throws ForbiddenHttpException
+     * @throws HttpException
+     */
+    public function actionUpdate(int $id): string
+    {
+        if ($model = Task::findOne($id)) {
+            if (Yii::$app->user->can('edit_task', ['task' => $model])) {
+                if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+                    $model->save();
+                    if ($urlFrom = Url::previous()) {
+                        return Yii::$app->getResponse()->redirect($urlFrom);
+                    }
+                    return Yii::$app->getResponse()->redirect(['task/view', 'id' => $model->id]);
+                }
+                return $this->render('form', ['model' => $model]);
+            }
+            throw new ForbiddenHttpException('Доступ запрещён');
+        }
+        throw new HttpException('404', 'Не удалось найти задачу с указанным id');
+    }
+
+    /**
+     * Удаляет запись по id, полученному из запроса.
+     * @param int $id
+     * @return string
+     * @throws HttpException
+     */
+    public function actionDelete(int $id): string
+    {
+        if ($model = Task::findOne(['id' => $id])) {
+            if (Yii::$app->user->can('delete_task', ['activity' => $model])) {
+                try {
+                    $model->delete();
+                } catch (\Throwable $e) {
+                    throw new HttpException(500, 'Ошибка удаления задачи');
+                }
+                if ($urlFrom = Url::previous()) {
+                    return Yii::$app->getResponse()->redirect($urlFrom);
+                }
+                return Yii::$app->getResponse()->redirect('/task/index');
+            }
+            throw new ForbiddenHttpException('Доступ запрещён');
+        }
+        throw new HttpException('404', 'Не удалось найти задачу с указанным id');
     }
 }

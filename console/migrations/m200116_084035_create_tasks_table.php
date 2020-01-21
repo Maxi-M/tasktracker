@@ -37,6 +37,8 @@ class m200116_084035_create_tasks_table extends Migration
      */
     public function safeDown()
     {
+        $this->dropForeignKey('fk_tasks_users_author','{{%tasks}}');
+        $this->dropForeignKey('fk_tasks_users_responsible','{{%tasks}}');
         $this->dropTable('{{%tasks}}');
     }
 }

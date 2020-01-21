@@ -26,7 +26,7 @@ echo GridView::widget([
         ],
                 [
             'label' => 'Ответственный за исполнение',
-            'attribute' => 'author.username',
+            'attribute' => 'responsible.username',
         ],
         [
             'class' => ActionColumn::class,

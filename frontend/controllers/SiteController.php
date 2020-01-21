@@ -154,6 +154,7 @@ class SiteController extends Controller
      * Signs user up.
      *
      * @return mixed
+     * @throws \yii\base\Exception
      */
     public function actionSignup()
     {
@@ -234,6 +235,9 @@ class SiteController extends Controller
         if ($user = $model->verifyEmail()) {
             if (Yii::$app->user->login($user)) {
                 Yii::$app->session->setFlash('success', 'Your email has been confirmed!');
+                // присвоим права обычного пользователя
+                $authManager = Yii::$app->authManager;
+                $authManager->assign($authManager->getRole('simple'), $model->id);
                 return $this->goHome();
             }
         }
