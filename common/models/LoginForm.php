@@ -6,6 +6,8 @@ use yii\base\Model;
 
 /**
  * Login form
+ *
+ * @property null|User $user
  */
 class LoginForm extends Model
 {

@@ -19,12 +19,21 @@ use yii\db\ActiveRecord;
  * @property string|null $due_at
  * @property int $author_id
  * @property int $responsible_id
+ * @property bool $status_id [tinyint(3)]
+ * @property bool $is_template [tinyint(1)]
+ * @property int $priority_id [int(11)]
+ * @property int $project_id [int(11)]
  *
  * @property User $author
+ * @property Task $template
  * @property User $responsible
+
  */
 class Task extends \yii\db\ActiveRecord
 {
+    /**@var $template_id - id шаблона на базе которого создаётся задача (не сохраняется в базе) */
+    public $template_id;
+
     /**
      * {@inheritdoc}
      */
@@ -39,12 +48,17 @@ class Task extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
+            [['is_template'], 'boolean'],
             [['name', 'responsible_id'], 'required'],
             [['description'], 'string'],
             [['created_at', 'updated_at', 'due_at'], 'safe'],
-            [['responsible_id'], 'integer'],
+            [['responsible_id', 'template_id', 'status_id', 'priority_id'], 'integer'],
             [['name'], 'string', 'max' => 255],
             [['responsible_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['responsible_id' => 'id']],
+            [['template_id'], 'exist', 'skipOnError' => true, 'targetClass' => self::className(), 'targetAttribute' => ['template_id' => 'id']],
+            [['status_id'], 'exist', 'skipOnError' => true, 'targetClass' => Status::className(), 'targetAttribute' => ['status_id' => 'id']],
+            [['priority_id'], 'exist', 'skipOnError' => false, 'targetClass' => Priority::className(), 'targetAttribute' => ['priority_id' => 'id']],
+            [['project_id'], 'exist', 'skipOnError' => false, 'targetClass' => Project::className(), 'targetAttribute' => ['project_id' => 'id']],
         ];
     }
 
@@ -83,7 +97,18 @@ class Task extends \yii\db\ActiveRecord
             'due_at' => 'Вывполнить до',
             'author_id' => 'ID Автора',
             'responsible_id' => 'ID Ответственного',
+            'is_template' => 'Шаблон?',
         ];
+    }
+
+    public function beforeValidate()
+    {
+        if (!empty($this->template_id)) {
+            $template = $this->template;
+            $this->description = $template->description;
+            $this->name = $template->name;
+        }
+        return parent::beforeValidate();
     }
 
     /**
@@ -100,6 +125,38 @@ class Task extends \yii\db\ActiveRecord
     public function getResponsible()
     {
         return $this->hasOne(User::className(), ['id' => 'responsible_id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTemplate()
+    {
+        return $this->hasOne(self::className(), ['id' => 'template_id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getStatus()
+    {
+        return $this->hasOne(Status::className(), ['id' => 'status_id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getPriority()
+    {
+        return $this->hasOne(Priority::className(), ['id' => 'priority_id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getProject()
+    {
+        return $this->hasOne(Project::className(), ['id' => 'project_id']);
     }
 
     /**

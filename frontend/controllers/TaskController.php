@@ -55,7 +55,7 @@ class TaskController extends Controller
      * @return string
      * @throws ForbiddenHttpException
      */
-    public function actionCreate(): string
+    public function actionCreate()
     {
         if (!Yii::$app->user->can('create_task')) {
             throw new ForbiddenHttpException('Доступ запрещён');
@@ -66,7 +66,14 @@ class TaskController extends Controller
             $model->save();
             return Yii::$app->getResponse()->redirect(['/task/view', 'id' => $model->id]);
         }
-        return $this->render('form', ['model' => $model]);
+
+        $templates = Task::find()->where(['is_template' => true, 'author_id' => Yii::$app->user->id])->all();
+        $templates = ArrayHelper::map($templates, 'id', 'name');
+
+        return $this->render('form', [
+            'model' => $model,
+            'templates' => $templates ?? [],
+        ]);
     }
 
     /**
@@ -97,7 +104,7 @@ class TaskController extends Controller
      */
     public function actionUpdate(int $id): string
     {
-        if ($model = Task::findOne($id)) {
+        if ($model = Task::find()->where(['id' => $id, 'author_id' => Yii::$app->user->id])->one()) {
             if (Yii::$app->user->can('edit_task', ['task' => $model])) {
                 if ($model->load(Yii::$app->request->post()) && $model->validate()) {
                     $model->save();
@@ -106,7 +113,7 @@ class TaskController extends Controller
                     }
                     return Yii::$app->getResponse()->redirect(['task/view', 'id' => $model->id]);
                 }
-                return $this->render('form', ['model' => $model]);
+                return $this->render('form', ['model' => $model, 'templates' =>[]]);
             }
             throw new ForbiddenHttpException('Доступ запрещён');
         }
@@ -121,7 +128,7 @@ class TaskController extends Controller
      */
     public function actionDelete(int $id): string
     {
-        if ($model = Task::findOne(['id' => $id])) {
+        if ($model = Task::find()->where(['id' => $id, 'author_id' => Yii::$app->user->id])->one()) {
             if (Yii::$app->user->can('delete_task', ['activity' => $model])) {
                 try {
                     $model->delete();
