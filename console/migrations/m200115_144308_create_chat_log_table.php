@@ -16,7 +16,6 @@ class m200115_144308_create_chat_log_table extends Migration
             'id' => $this->primaryKey(),
             'username' => $this->string(),
             'created_at' => $this->bigInteger(),
-            'updated_at' => $this->bigInteger(),
             'message' => $this->text(),
             'type' => $this->tinyInteger(),
         ]);

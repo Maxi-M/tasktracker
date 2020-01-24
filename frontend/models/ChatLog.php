@@ -2,8 +2,11 @@
 
 namespace frontend\models;
 
+use common\models\Project;
+use common\models\Task;
 use Yii;
 use yii\behaviors\TimestampBehavior;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "chat_log".
@@ -11,18 +14,22 @@ use yii\behaviors\TimestampBehavior;
  * @property int $id
  * @property string|null $username
  * @property int|null $created_at
- * @property int|null $updated_at
  * @property string|null $message
  * @property int $type
+ * @property int $task_id [int(11)]
+ * @property int $project_id [int(11)]
+ * @property Project $project
+ * @property Task $task
  */
 class ChatLog extends \yii\db\ActiveRecord
 {
-    const SHOW_HISTORY = 1;
-    const SEND_MESSAGE = 2;
+    public const SHOW_HISTORY = 1;
+    public const SEND_MESSAGE = 2;
+
     /**
      * {@inheritdoc}
      */
-    public static function tableName():string
+    public static function tableName(): string
     {
         return 'chat_log';
     }
@@ -33,7 +40,7 @@ class ChatLog extends \yii\db\ActiveRecord
     public function rules()
     {
         $rules = [
-            [['created_at', 'updated_at', 'type'], 'integer'],
+            [['created_at', 'type', 'project_id', 'task_id'], 'integer'],
             [['username', 'type'], 'required'],
             [['message'], 'string'],
             [['username'], 'string', 'max' => 255],
@@ -48,9 +55,12 @@ class ChatLog extends \yii\db\ActiveRecord
     public function behaviors()
     {
         return [
-            TimestampBehavior::class => [
-                'class' => TimestampBehavior::class,
-            ]
+            TimestampBehavior::className() => [
+                'class' => TimestampBehavior::className(),
+                'attributes' => [
+                    ActiveRecord::EVENT_BEFORE_INSERT => ['created_at'],
+                ],
+            ],
         ];
     }
 
@@ -63,7 +73,6 @@ class ChatLog extends \yii\db\ActiveRecord
             'id' => 'ID',
             'username' => 'Username',
             'created_at' => 'Created At',
-            'updated_at' => 'Updated At',
             'message' => 'Message',
             'type' => 'Type',
         ];
@@ -76,14 +85,35 @@ class ChatLog extends \yii\db\ActiveRecord
     public static function create(array $data)
     {
         try {
-            $model = new self(['username' => $data['username'], 'message' => $data['message'], 'type' => $data['type']]);
+            $model = new self([
+                'username' => $data['username'],
+                'message' => $data['message'],
+                'type' => $data['type'],
+                'project_id' => $data['project_id'] ?? null,
+                'task_id' => $data['task_id'] ?? null,
+            ]);
             if ($model->save()) {
                 return true;
             }
-            var_dump($model->errors);
         } catch (\Throwable $throwable) {
             Yii::error($throwable->getTraceAsString());
             Yii::error(json_encode($data));
         }
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getTask()
+    {
+        return $this->hasOne(Task::class, ['id' => 'task_id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getProject()
+    {
+        return $this->hasOne(Project::class, ['id' => 'project_id']);
     }
 }
