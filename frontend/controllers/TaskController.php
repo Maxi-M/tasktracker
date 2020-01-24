@@ -6,6 +6,8 @@ namespace frontend\controllers;
 
 use common\models\Task;
 use common\models\User;
+use frontend\events\InformationUpdateEvent;
+use frontend\events\TaskUpdateEvent;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
@@ -64,6 +66,12 @@ class TaskController extends Controller
 
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             $model->save();
+            Yii::$app->trigger(
+                InformationUpdateEvent::EVENT_INFORMATION_CHANGE,
+                new TaskUpdateEvent([
+                    'model' => $model,
+                    'action' => TaskUpdateEvent::NEW_RECORD
+                ]));
             return Yii::$app->getResponse()->redirect(['/task/view', 'id' => $model->id]);
         }
 
@@ -108,6 +116,12 @@ class TaskController extends Controller
             if (Yii::$app->user->can('edit_task', ['task' => $model])) {
                 if ($model->load(Yii::$app->request->post()) && $model->validate()) {
                     $model->save();
+                    Yii::$app->trigger(
+                        InformationUpdateEvent::EVENT_INFORMATION_CHANGE,
+                        new TaskUpdateEvent([
+                            'model' => $model,
+                            'action' => TaskUpdateEvent::UPDATE_RECORD
+                        ]));
                     if ($urlFrom = Url::previous()) {
                         return Yii::$app->getResponse()->redirect($urlFrom);
                     }
@@ -132,6 +146,12 @@ class TaskController extends Controller
             if (Yii::$app->user->can('delete_task', ['activity' => $model])) {
                 try {
                     $model->delete();
+                    Yii::$app->trigger(
+                        InformationUpdateEvent::EVENT_INFORMATION_CHANGE,
+                        new TaskUpdateEvent([
+                            'model' => $model,
+                            'action' => TaskUpdateEvent::DELETE_RECORD
+                        ]));
                 } catch (\Throwable $e) {
                     throw new HttpException(500, 'Ошибка удаления задачи');
                 }

@@ -1,5 +1,6 @@
 <?php
 
+use common\components\NotificationEventsHandler;
 use yii\rbac\DbManager;
 
 return [
@@ -22,5 +23,8 @@ return [
         'authManager' => [
             'class' => DbManager::class,
         ],
+        'notificationHandler' => [
+            'class' => NotificationEventsHandler::class
+        ]
     ],
 ];

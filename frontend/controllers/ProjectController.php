@@ -6,6 +6,8 @@ use common\models\ProjectAssignments;
 use common\models\Status;
 use common\models\Task;
 use common\models\User;
+use frontend\events\InformationUpdateEvent;
+use frontend\events\ProjectUpdateEvent;
 use Yii;
 use common\models\Project;
 use common\models\ProjectSearch;
@@ -84,6 +86,12 @@ class ProjectController extends Controller
         $model = new Project();
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            Yii::$app->trigger(
+                InformationUpdateEvent::EVENT_INFORMATION_CHANGE,
+                new ProjectUpdateEvent([
+                    'model' => $model,
+                    'action' => ProjectUpdateEvent::NEW_RECORD
+                ]));
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
@@ -92,6 +100,7 @@ class ProjectController extends Controller
             'lists' => $this->generateDropDownContents()
         ]);
     }
+
 
     /**
      * Updates an existing Project model.
@@ -105,6 +114,12 @@ class ProjectController extends Controller
         $model = $this->findModel($id);
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            Yii::$app->trigger(
+                InformationUpdateEvent::EVENT_INFORMATION_CHANGE,
+                new ProjectUpdateEvent([
+                    'model' => $model,
+                    'action' => ProjectUpdateEvent::UPDATE_RECORD
+                ]));
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
@@ -125,7 +140,14 @@ class ProjectController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        $model = $this->findModel($id);
+        $model->delete();
+        Yii::$app->trigger(
+            InformationUpdateEvent::EVENT_INFORMATION_CHANGE,
+            new ProjectUpdateEvent([
+                'model' => $model,
+                'action' => ProjectUpdateEvent::DELETE_RECORD
+            ]));
 
         return $this->redirect(['index']);
     }

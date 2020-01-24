@@ -94,6 +94,8 @@ class ChatLog extends \yii\db\ActiveRecord
             ]);
             if ($model->save()) {
                 return true;
+            } else {
+                $model->errors;
             }
         } catch (\Throwable $throwable) {
             Yii::error($throwable->getTraceAsString());
