@@ -3,6 +3,9 @@
 
 namespace console\components;
 
+use common\models\Project;
+use common\models\Task;
+use frontend\events\InformationUpdateEvent;
 use frontend\models\ChatLog;
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
@@ -21,6 +24,7 @@ class SocketServer implements MessageComponentInterface
         $this->clients->attach($conn);
         $this->sendHelloMessage($conn);
         echo "New connection! ({$conn->resourceId})\n";
+
     }
 
     /**
@@ -49,7 +53,7 @@ class SocketServer implements MessageComponentInterface
             $chatLogsQuery->andWhere(['task_id' => (int)$msg['task_id']]);
         }
         if (isset($msg['project_id'])) {
-            $chatLogsQuery->andWhere(['project_id' =>(int)$msg['project_id']]);
+            $chatLogsQuery->andWhere(['project_id' => (int)$msg['project_id']]);
         }
 
         foreach ($chatLogsQuery->each() as $chatLog) {
@@ -68,7 +72,7 @@ class SocketServer implements MessageComponentInterface
      * @param ConnectionInterface $conn
      * @param array $msg
      */
-    private function sendMessage(ConnectionInterface $conn, array $msg)
+    private function sendMessage(ConnectionInterface $conn, array $msg): void
     {
         $conn->send(json_encode($msg));
     }
@@ -77,7 +81,7 @@ class SocketServer implements MessageComponentInterface
      * @param ConnectionInterface $conn
      * @throws \yii\base\InvalidConfigException
      */
-    private function sendHelloMessage(ConnectionInterface $conn)
+    private function sendHelloMessage(ConnectionInterface $conn): void
     {
         $this->sendMessage($conn, ['message' => 'Добро пожаловать', 'username' => 'Чат:', 'created_at' => \Yii::$app->formatter->asDatetime(time())]);
     }
@@ -94,4 +98,6 @@ class SocketServer implements MessageComponentInterface
         echo "An error has occurred: {$e->getMessage()}\n";
         $conn->close();
     }
+
+
 }
