@@ -1,4 +1,7 @@
 <?php
+
+use yii\rest\UrlRule;
+
 $params = array_merge(
     require __DIR__ . '/../../common/config/params.php',
     require __DIR__ . '/../../common/config/params-local.php',
@@ -16,6 +19,9 @@ return [
         'request' => [
             'csrfParam' => '_csrf-frontend',
             'cookieValidationKey' => $params['cookieValidationKey'],
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ]
         ],
         'user' => [
             'identityClass' => 'common\models\User',
@@ -25,7 +31,7 @@ return [
         'session' => [
             // this is the name of the session cookie used for login on the frontend
             'name' => 'advanced',
-            'cookieParams' =>[
+            'cookieParams' => [
                 'httpOnly' => true,
                 'domain' => $params['cookieDomain'],
             ]
@@ -41,6 +47,23 @@ return [
         ],
         'errorHandler' => [
             'errorAction' => 'site/error',
+        ],
+        'urlManager' => [
+            'rules' => [
+                [
+                    'controller' => 'api/task',
+                    'class' => UrlRule::class,
+                    'extraPatterns' => [
+                        'GET auth' => 'auth',
+                    ]
+                ]
+            ],
+
+        ],
+    ],
+    'modules' => [
+        'api' => [
+            'class' => 'frontend\modules\api\Module',
         ],
     ],
     'params' => $params,

@@ -7,6 +7,9 @@ use common\behaviors\TimestampTransformBehavior;
 use Yii;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
+use yii\helpers\Url;
+use yii\web\Link;
+use yii\web\Linkable;
 
 /**
  * This is the model class for table "tasks".
@@ -29,7 +32,7 @@ use yii\db\ActiveRecord;
  * @property User $responsible
 
  */
-class Task extends \yii\db\ActiveRecord
+class Task extends \yii\db\ActiveRecord implements Linkable
 {
     /**@var $template_id - id шаблона на базе которого создаётся задача (не сохраняется в базе) */
     public $template_id;
@@ -167,4 +170,15 @@ class Task extends \yii\db\ActiveRecord
     {
         return new TasksQuery(get_called_class());
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getLinks()
+    {
+        return [
+            Link::REL_SELF => Url::to(['task/view', 'id' => $this->id]),
+        ];
+    }
+
 }
